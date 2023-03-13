@@ -11,6 +11,7 @@ import argparse
 import logging
 import logging.handlers
 import os
+import pdfbox
 import sys
 import threading
 from concurrent.futures.process import BrokenProcessPool
@@ -220,7 +221,7 @@ def exec_page_sync(page_context: PageContext) -> PageResult:
         (ocr_out, text_out) = ocr_engine_textonly_pdf(ocr_image_out, page_context)
     else:
         raise NotImplementedError(f"pdf_renderer {options.pdf_renderer}")
-
+    print("This is ocr",page_context.pageno,ocr_out,"\n_________Seperate_____________________________________________\n","This is text",page_context.pageno,text_out)
     return PageResult(
         pageno=page_context.pageno,
         pdf_page_from_image=pdf_page_from_image_out,
@@ -249,9 +250,28 @@ def worker_init(max_pixels: int) -> None:
     PIL.Image.MAX_IMAGE_PIXELS = max_pixels
     pikepdf_enable_mmap()
 
-
+def get_page_square_dpi(pageinfo: PageInfo, options) -> Resolution:
+    "Get the DPI when we require xres == yres, scaled to physical units"
+    xres = pageinfo.dpi.x or 0.0
+    yres = pageinfo.dpi.y or 0.0
+    userunit = float(pageinfo.userunit) or 1.0
+    units = float(
+        max(
+            (xres * userunit) or VECTOR_PAGE_DPI,
+            (yres * userunit) or VECTOR_PAGE_DPI,
+            _vector_page_dpi(pageinfo),
+            options.oversample or 0.0,
+        )
+    )
+    return Resolution(units, units)
 def exec_concurrent(context: PdfContext, executor: Executor) -> Sequence[str]:
-    """Execute the pipeline concurrently."""
+    """Execute the pipeline concurrently"""
+    p = pdfbox.PDFBox()
+    path = context.get_path("origin.pdf")
+    output_path = os.path.dirname(path)+"PDFOCROutput"
+    print("Inside sync",output_path)
+    
+    p.pdf_to_images(path,outputPrefix = output_path,dpi=300)
     # Run exec_page_sync on every page context
     options = context.options
     max_workers = min(len(context.pdfinfo), options.jobs)

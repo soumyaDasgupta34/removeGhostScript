@@ -296,8 +296,8 @@ class OcrGrafter:
             )
             new_text_layer = Stream(self.pdf_base, pdf_draw_xobj)
 
-            if strip_old_text:
-                strip_invisible_text(self.pdf_base, base_page)
+            # if strip_old_text:
+            #     strip_invisible_text(self.pdf_base, base_page)
 
             base_page.contents_add(new_text_layer, prepend=True)
 

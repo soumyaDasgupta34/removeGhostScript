@@ -283,7 +283,6 @@ def is_ocr_required(page_context: PageContext) -> bool:
     options = page_context.options
 
     ocr_required = True
-
     if options.pages and pageinfo.pageno not in options.pages:
         log.debug(f"skipped {pageinfo.pageno} as requested by --pages {options.pages}")
         ocr_required = False
@@ -597,8 +596,8 @@ def create_ocr_image(image: Path, page_context: PageContext) -> Path:
             # all text areas
             mask = None  # Exclude both visible and invisible text from OCR
             if options.redo_ocr:
-                mask = True  # Mask visible text, but not invisible text
-
+                #mask = True  # Mask visible text, but not invisible text
+                 mask = None
             draw = ImageDraw.ImageDraw(im)
             for textarea in page_context.pageinfo.get_textareas(
                 visible=mask, corrupt=None

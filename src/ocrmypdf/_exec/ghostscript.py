@@ -95,44 +95,49 @@ def rasterize_pdf(
     raster_dpi = raster_dpi.round(6)
     if not page_dpi:
         page_dpi = raster_dpi
+    # args_gs = (
+    #     [
+    #         GS,
+    #         '-dQUIET',
+    #         '-dSAFER',
+    #         '-dBATCH',
+    #         '-dNOPAUSE',
+    #         '-dInterpolateControl=-1',
+    #         f'-sDEVICE={raster_device}',
+    #         f'-dFirstPage={pageno}',
+    #         f'-dLastPage={pageno}',
+    #         f'-r{raster_dpi.x:f}x{raster_dpi.y:f}',
+    #     ]
+    #     + (['-dFILTERVECTOR'] if filter_vector else [])
+    #     + [
+    #         '-o',
+    #         '-',
+    #         '-sstdout=%stderr',  # Literal %s, not string interpolation
+    #         '-dAutoRotatePages=/None',  # Probably has no effect on raster
+    #         '-f',
+    #         fspath(input_file),
+    #     ]
+    # )
 
-    args_gs = (
-        [
-            GS,
-            '-dQUIET',
-            '-dSAFER',
-            '-dBATCH',
-            '-dNOPAUSE',
-            '-dInterpolateControl=-1',
-            f'-sDEVICE={raster_device}',
-            f'-dFirstPage={pageno}',
-            f'-dLastPage={pageno}',
-            f'-r{raster_dpi.x:f}x{raster_dpi.y:f}',
-        ]
-        + (['-dFILTERVECTOR'] if filter_vector else [])
-        + (['-dPDFSTOPONERROR'] if stop_on_error else [])
-        + [
-            '-o',
-            '-',
-            '-sstdout=%stderr',  # Literal %s, not string interpolation
-            '-dAutoRotatePages=/None',  # Probably has no effect on raster
-            '-f',
-            fspath(input_file),
-        ]
-    )
+    # try:
+    #     # p = run(args_gs, stdout=PIPE, stderr=PIPE, check=True)
+    #     p = pdfbox.PDFBox()
+    #     print(input_file)
+    #     p.pdf_to_images("/Users/soumyadasgupta/Documents/clm-projects/ai/test.pdf",page_number=1)
+    #     print("After")
+    # except CalledProcessError as e:
+    #     print("Error")
+    #     log.error(e.stderr.decode(errors='replace'))
+    #     raise SubprocessOutputError('Ghostscript rasterizing failed') from e
+    # else:
+        # stderr = p.stderr.decode(errors='replace')
+        # if _gs_error_reported(stderr):
+        #     log.error(stderr)
 
     try:
-        p = run(args_gs, stdout=PIPE, stderr=PIPE, check=True)
-    except CalledProcessError as e:
-        log.error(e.stderr.decode(errors='replace'))
-        raise SubprocessOutputError('Ghostscript rasterizing failed') from e
-    else:
-        stderr = p.stderr.decode(errors='replace')
-        if _gs_error_reported(stderr):
-            log.error(stderr)
-
-    try:
-        with Image.open(BytesIO(p.stdout)) as im:
+        path = os.path.dirname(str(input_file))+"PDFOCROutput"+str(pageno)+".jpg"
+        print("This is path" +path)
+        with Image.open(path) as im:
             if rotation is not None:
                 log.debug("Rotating output by %i", rotation)
                 # rotation is a clockwise angle and Image.ROTATE_* is
@@ -145,7 +150,7 @@ def rasterize_pdf(
                     im = im.transpose(Transpose.ROTATE_270)
                 if rotation % 180 == 90:
                     page_dpi = page_dpi.flip_axis()
-            im.save(fspath(output_file), dpi=page_dpi)
+            im.save(fspath(output_file), dpi=[300,300])
     except UnidentifiedImageError:
         log.error(
             f"Ghostscript (using {raster_device} at {raster_dpi} dpi) produced "
