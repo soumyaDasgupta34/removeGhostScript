@@ -47,21 +47,6 @@ def add_options(parser):
 
 @hookimpl
 def check_options(options):
-    """Check that the options are valid for this plugin."""
-    check_external_program(
-        program='gs',
-        package='ghostscript',
-        version_checker=ghostscript.version,
-        need_version='9.55',  # Ubuntu 22.04's version
-    )
-    gs_version = ghostscript.version()
-    if gs_version in BLACKLISTED_GS_VERSIONS:
-        raise MissingDependencyError(
-            f"Ghostscript {gs_version} contains serious regressions and is not "
-            "supported. Please upgrade to a newer version, or downgrade to the "
-            "previous version."
-        )
-
     if options.output_type == 'pdfa':
         options.output_type = 'pdfa-2'
     if options.color_conversion_strategy not in ghostscript.COLOR_CONVERSION_STRATEGIES:
