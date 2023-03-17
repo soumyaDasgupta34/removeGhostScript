@@ -366,7 +366,7 @@ def run_pipeline(
     if not plugin_manager:
         plugin_manager = get_plugin_manager(options.plugins)
 
-    work_folder = Path(mkdtemp(prefix="ocrmypdf.io.",dir="/workspace/temp"))
+    work_folder = Path(mkdtemp(prefix="ocrmypdf.io.",dir="/workspace"))
     debug_log_handler = None
     if (
         (options.keep_temporary_files or options.verbose >= 1)
