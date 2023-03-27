@@ -268,7 +268,7 @@ def exec_concurrent(context: PdfContext, executor: Executor) -> Sequence[str]:
     """Execute the pipeline concurrently"""
     p = pdfbox.PDFBox()
     path = context.get_path("origin.pdf")
-    output_path = os.path.dirname(path)+"PDFOCROutput"
+    output_path = os.path.dirname(path)+"/PDFOCROutput"
     print("Inside sync",output_path)
     
     p.pdf_to_images(path,outputPrefix = output_path,dpi=300)
@@ -366,7 +366,8 @@ def run_pipeline(
     if not plugin_manager:
         plugin_manager = get_plugin_manager(options.plugins)
 
-    work_folder = Path(mkdtemp(prefix="ocrmypdf.io.",dir="/workspace"))
+    work_folder = Path(mkdtemp(prefix="ocrmypdf.io.",dir="/workspace/temp/"))
+
     debug_log_handler = None
     if (
         (options.keep_temporary_files or options.verbose >= 1)
@@ -434,6 +435,7 @@ def run_pipeline(
             if not check_pdf(options.output_file):
                 log.warning('Output file: The generated PDF is INVALID')
                 return ExitCode.invalid_output_pdf
+            
             report_output_file_size(
                 options, start_input_file, options.output_file, optimize_messages
             )
