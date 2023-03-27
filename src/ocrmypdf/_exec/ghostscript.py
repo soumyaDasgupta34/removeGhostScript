@@ -135,7 +135,7 @@ def rasterize_pdf(
         #     log.error(stderr)
 
     try:
-        path = os.path.dirname(str(input_file))+"PDFOCROutput"+str(pageno)+".jpg"
+        path = os.path.dirname(str(input_file))+"/PDFOCROutput"+str(pageno)+".jpg"
         print("This is path" +path)
         with Image.open(path) as im:
             if rotation is not None:
