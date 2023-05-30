@@ -247,7 +247,7 @@ def worker_init(max_pixels: int) -> None:
     # In Windows, child process will not inherit our change to this value in
     # the parent process, so ensure workers get it set. Not needed when running
     # threaded, but harmless to set again.
-    PIL.Image.MAX_IMAGE_PIXELS = max_pixels
+    PIL.Image.MAX_IMAGE_PIXELS = None
     pikepdf_enable_mmap()
 
 def get_page_square_dpi(pageinfo: PageInfo, options) -> Resolution:
