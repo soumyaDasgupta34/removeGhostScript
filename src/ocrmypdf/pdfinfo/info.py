@@ -567,9 +567,12 @@ def _find_form_xobject_images(pdf: Pdf, container: Object, contentsinfo: Content
             # but in practice both Form XObjects and multiple drawing of the
             # same object are both very rare.
             ctm_shorthand = settings.shorthand
-            yield from _process_content_streams(
-                pdf=pdf, container=form_xobject, shorthand=ctm_shorthand
-            )
+            try:
+                yield from _process_content_streams(
+                    pdf=pdf, container=form_xobject, shorthand=ctm_shorthand
+                )
+            except:
+                pass
 
 
 def _process_content_streams(
