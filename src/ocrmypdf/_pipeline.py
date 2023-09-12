@@ -304,7 +304,7 @@ def is_ocr_required(page_context: PageContext) -> bool:
             else:
                 log.info("redoing OCR")
             ocr_required = True
-            if not pageinfo.images:
+            if not pageinfo.images and not pageinfo.has_vector:
                 ocr_required = False
                 print("Skipped processing")
         elif options.skip_text:
