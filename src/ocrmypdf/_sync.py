@@ -68,6 +68,34 @@ from ocrmypdf.helpers import (
 )
 from ocrmypdf.pdfa import file_claims_pdfa
 
+import sys
+try:
+    from pypdf import (
+        PdfReader,
+        PdfWriter,
+        PaperSize,
+        Transformation,
+        PageObject,
+    )
+    from pypdf.generic import RectangleObject
+except ImportError:
+    try:
+        from pypdf import PdfReader, PdfWriter, PaperSize
+    except ImportError:
+        raise ImportError("Could not import pyPdf or PyPDF2")
+    
+def removeannotations(input_path, output_path):
+    A4_w = PaperSize.A4.width
+    A4_h = PaperSize.A4.height
+    input_pdf = PdfReader(input_path)
+    output_pdf = PdfWriter()
+    for page in input_pdf.pages:
+       if page.annotations:
+           page.annotations.clear()
+    output_pdf.add_page(page)
+    with open(output_path, "wb") as outfile:
+        output_pdf.write(outfile)
+
 log = logging.getLogger(__name__)
 
 
@@ -267,11 +295,14 @@ def get_page_square_dpi(pageinfo: PageInfo, options) -> Resolution:
 def exec_concurrent(context: PdfContext, executor: Executor) -> Sequence[str]:
     """Execute the pipeline concurrently"""
     p = pdfbox.PDFBox()
+
     path = context.get_path("origin.pdf")
+    path_cleaned = context.get_path("origin_cleaned.pdf")
+    removeannotations(path,path_cleaned)
     output_path = os.path.dirname(path)+"/PDFOCROutput"
     print("Inside sync",output_path)
     
-    p.pdf_to_images(path,outputPrefix = output_path,dpi=300)
+    p.pdf_to_images(path_cleaned,outputPrefix = output_path,dpi=300)
     # Run exec_page_sync on every page context
     options = context.options
     max_workers = min(len(context.pdfinfo), options.jobs)
