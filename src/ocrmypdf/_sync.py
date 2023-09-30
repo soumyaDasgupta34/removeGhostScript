@@ -91,10 +91,12 @@ def removeannotations(input_path, output_path):
     A4_h = PaperSize.A4.height
     input_pdf = PdfReader(input_path)
     output_pdf = PdfWriter()
+
     for page in input_pdf.pages:
         if page.annotations:
             page.annotations.clear()
-    output_pdf.add_page(page)
+        output_pdf.add_page(page)
+
     with open(output_path, "wb") as outfile:
         output_pdf.write(outfile)
 
@@ -411,7 +413,7 @@ def run_pipeline(
     if not plugin_manager:
         plugin_manager = get_plugin_manager(options.plugins)
 
-    work_folder = Path(mkdtemp(prefix="ocrmypdf.io."))
+    work_folder = Path(mkdtemp(prefix="ocrmypdf.io.", dir="/workspace/tmp"))
 
     debug_log_handler = None
     if (
