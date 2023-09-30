@@ -313,7 +313,7 @@ def exec_concurrent(context: PdfContext, executor: Executor) -> Sequence[str]:
     path = context.get_path("origin.pdf")
     path_cleaned = context.get_path("origin_cleaned.pdf")
     removeannotations(path, path_cleaned)
-    output_path = os.path.dirname(path) + "PDFOCROutput"
+    output_path = os.path.dirname(path) + "/PDFOCROutput"
     print("Inside sync", output_path)
 
     p.pdf_to_images(path_cleaned, outputPrefix=output_path, dpi=300)
