@@ -46,10 +46,10 @@ HOCR_TEMPLATE = """<?xml version="1.0" encoding="UTF-8"?>
 """
 
 TESSERACT_THRESHOLDING_METHODS: dict[str, int] = {
-    'auto': 0,
-    'otsu': 0,
-    'adaptive-otsu': 1,
-    'sauvola': 2,
+    "auto": 0,
+    "otsu": 0,
+    "adaptive-otsu": 1,
+    "sauvola": 2,
 }
 
 
@@ -57,8 +57,8 @@ class TesseractLoggerAdapter(logging.LoggerAdapter):
     """Prepend [tesseract] to messages emitted from tesseract."""
 
     def process(self, msg, kwargs):
-        kwargs['extra'] = self.extra
-        return f'[tesseract] {msg}', kwargs
+        kwargs["extra"] = self.extra
+        return f"[tesseract] {msg}", kwargs
 
 
 TESSERACT_VERSION_PATTERN = r"""
@@ -114,12 +114,12 @@ class TesseractVersion(Version):
 
 
 def version() -> Version:
-    return TesseractVersion(get_version('tesseract', regex=r'tesseract\s(.+)'))
+    return TesseractVersion(get_version("tesseract", regex=r"tesseract\s(.+)"))
 
 
 def has_thresholding() -> bool:
     """Does Tesseract have -c thresholding method capability?"""
-    return version() >= Version('5.0')
+    return version() >= Version("5.0")
 
 
 def get_languages() -> set[str]:
@@ -132,7 +132,7 @@ def get_languages() -> set[str]:
         msg += output
         return msg
 
-    args_tess = ['tesseract', '--list-langs']
+    args_tess = ["tesseract", "--list-langs"]
     try:
         proc = run(
             args_tess,
@@ -147,18 +147,19 @@ def get_languages() -> set[str]:
         raise MissingDependencyError(lang_error(e.output)) from e
 
     for line in output.splitlines():
-        if line.startswith('Error'):
+        if line.startswith("Error"):
             raise MissingDependencyError(lang_error(output))
     _header, *rest = output.splitlines()
     return {lang.strip() for lang in rest}
 
 
 def tess_base_args(langs: list[str], engine_mode: int | None) -> list[str]:
-    args = ['tesseract']
+    args = ["tesseract"]
     if langs:
-        args.extend(['-l', '+'.join(langs)])
+        args.extend(["-l", "+".join(langs)])
     if engine_mode is not None:
-        args.extend(['--oem', str(engine_mode)])
+        args.extend(["--oem", str(engine_mode)])
+    args.extend(["--dpi", "2000"])
     return args
 
 
@@ -166,7 +167,7 @@ def _parse_tesseract_output(binary_output: bytes) -> dict[str, str]:
     def gen():
         for line in binary_output.decode().splitlines():
             line = line.strip()
-            parts = line.split(':', maxsplit=2)
+            parts = line.split(":", maxsplit=2)
             if len(parts) == 2:
                 yield parts[0].strip(), parts[1].strip()
 
@@ -176,11 +177,11 @@ def _parse_tesseract_output(binary_output: bytes) -> dict[str, str]:
 def get_orientation(
     input_file: Path, engine_mode: int | None, timeout: float
 ) -> OrientationConfidence:
-    args_tesseract = tess_base_args(['osd'], engine_mode) + [
-        '--psm',
-        '0',
+    args_tesseract = tess_base_args(["osd"], engine_mode) + [
+        "--psm",
+        "0",
         fspath(input_file),
-        'stdout',
+        "stdout",
     ]
 
     try:
@@ -191,16 +192,16 @@ def get_orientation(
         tesseract_log_output(e.stdout)
         tesseract_log_output(e.stderr)
         if (
-            b'Too few characters. Skipping this page' in e.output
-            or b'Image too large' in e.output
+            b"Too few characters. Skipping this page" in e.output
+            or b"Image too large" in e.output
         ):
             return OrientationConfidence(0, 0)
         raise SubprocessOutputError() from e
 
     osd = _parse_tesseract_output(p.stdout)
-    angle = int(osd.get('Orientation in degrees', 0))
+    angle = int(osd.get("Orientation in degrees", 0))
     orient_conf = OrientationConfidence(
-        angle=angle, confidence=float(osd.get('Orientation confidence', 0))
+        angle=angle, confidence=float(osd.get("Orientation confidence", 0))
     )
     return orient_conf
 
@@ -210,10 +211,10 @@ def get_deskew(
 ) -> float:
     """Gets angle to deskew this page, in degrees."""
     args_tesseract = tess_base_args(languages, engine_mode) + [
-        '--psm',
-        '2',
+        "--psm",
+        "2",
         fspath(input_file),
-        'stdout',
+        "stdout",
     ]
 
     try:
@@ -223,15 +224,15 @@ def get_deskew(
     except CalledProcessError as e:
         tesseract_log_output(e.stdout)
         tesseract_log_output(e.stderr)
-        if b'Empty page!!' in e.output or (
-            e.output == b'' and e.returncode == 1
+        if b"Empty page!!" in e.output or (
+            e.output == b"" and e.returncode == 1
         ):  # Not enough info for a skew angle - Tess 4 and 5 return different errors
             return 0.0
 
         raise SubprocessOutputError() from e
 
     parsed = _parse_tesseract_output(p.stdout)
-    deskew_radians = float(parsed.get('Deskew angle', 0))
+    deskew_radians = float(parsed.get("Deskew angle", 0))
     deskew_degrees = 180 / pi * deskew_radians
     log.debug(f"Deskew angle: {deskew_degrees:.3f}")
     return deskew_degrees
@@ -239,7 +240,7 @@ def get_deskew(
 
 def tesseract_log_output(stream: bytes) -> None:
     tlog = TesseractLoggerAdapter(
-        log, extra=log.extra if hasattr(log, 'extra') else None  # type: ignore
+        log, extra=log.extra if hasattr(log, "extra") else None  # type: ignore
     )
 
     if not stream:
@@ -247,7 +248,7 @@ def tesseract_log_output(stream: bytes) -> None:
     try:
         text = stream.decode()
     except UnicodeDecodeError:
-        text = stream.decode('utf-8', 'ignore')
+        text = stream.decode("utf-8", "ignore")
 
     lines = text.splitlines()
     for line in lines:
@@ -255,23 +256,23 @@ def tesseract_log_output(stream: bytes) -> None:
             continue
         elif line.startswith("Warning in pixReadMem"):
             continue
-        elif 'diacritics' in line:
+        elif "diacritics" in line:
             tlog.warning("lots of diacritics - possibly poor OCR")
-        elif line.startswith('OSD: Weak margin'):
+        elif line.startswith("OSD: Weak margin"):
             tlog.warning("unsure about page orientation")
-        elif 'Error in pixScanForForeground' in line:
+        elif "Error in pixScanForForeground" in line:
             pass  # Appears to be spurious/problem with nonwhite borders
-        elif 'Error in boxClipToRectangle' in line:
+        elif "Error in boxClipToRectangle" in line:
             pass  # Always appears with pixScanForForeground message
-        elif 'parameter not found: ' in line.lower():
+        elif "parameter not found: " in line.lower():
             tlog.error(line.strip())
-            problem = line.split('found: ')[1]
+            problem = line.split("found: ")[1]
             raise TesseractConfigError(problem)
-        elif 'error' in line.lower() or 'exception' in line.lower():
+        elif "error" in line.lower() or "exception" in line.lower():
             tlog.error(line.strip())
-        elif 'warning' in line.lower():
+        elif "warning" in line.lower():
             tlog.warning(line.strip())
-        elif 'read_params_file' in line.lower():
+        elif "read_params_file" in line.lower():
             tlog.error(line.strip())
         else:
             tlog.info(line.strip())
@@ -291,8 +292,8 @@ def _generate_null_hocr(output_hocr: Path, output_text: Path, image: Path) -> No
     with Image.open(image) as im:
         w, h = im.size
 
-    output_hocr.write_text(HOCR_TEMPLATE.format(w, h), encoding='utf-8')
-    output_text.write_text('[skipped page]', encoding='utf-8')
+    output_hocr.write_text(HOCR_TEMPLATE.format(w, h), encoding="utf-8")
+    output_text.write_text("[skipped page]", encoding="utf-8")
 
 
 def generate_hocr(
@@ -310,25 +311,25 @@ def generate_hocr(
     user_patterns,
 ) -> None:
     """Generate a hOCR file, which must be converted to PDF."""
-    prefix = output_hocr.with_suffix('')
+    prefix = output_hocr.with_suffix("")
 
     args_tesseract = tess_base_args(languages, engine_mode)
 
     if pagesegmode is not None:
-        args_tesseract.extend(['--psm', str(pagesegmode)])
+        args_tesseract.extend(["--psm", str(pagesegmode)])
 
     if thresholding != 0 and has_thresholding():
-        args_tesseract.extend(['-c', f'thresholding_method={thresholding}'])
+        args_tesseract.extend(["-c", f"thresholding_method={thresholding}"])
 
     if user_words:
-        args_tesseract.extend(['--user-words', user_words])
+        args_tesseract.extend(["--user-words", user_words])
 
     if user_patterns:
-        args_tesseract.extend(['--user-patterns', user_patterns])
+        args_tesseract.extend(["--user-patterns", user_patterns])
 
     # Reminder: test suite tesseract test plugins will break after any changes
     # to the number of order parameters here
-    args_tesseract.extend([fspath(input_file), fspath(prefix), 'hocr', 'txt'])
+    args_tesseract.extend([fspath(input_file), fspath(prefix), "hocr", "txt"])
     args_tesseract.extend(tessconfig)
     try:
         p = run(args_tesseract, stdout=PIPE, stderr=STDOUT, timeout=timeout, check=True)
@@ -341,7 +342,7 @@ def generate_hocr(
         _generate_null_hocr(output_hocr, output_text, input_file)
     except CalledProcessError as e:
         tesseract_log_output(e.output)
-        if b'Image too large' in e.output or b'Empty page!!' in e.output:
+        if b"Image too large" in e.output or b"Empty page!!" in e.output:
             _generate_null_hocr(output_hocr, output_text, input_file)
             return
 
@@ -350,15 +351,15 @@ def generate_hocr(
         tesseract_log_output(stdout)
         # The sidecar text file will get the suffix .txt; rename it to
         # whatever caller wants it named
-        if prefix.with_suffix('.txt').exists():
-            prefix.with_suffix('.txt').replace(output_text)
+        if prefix.with_suffix(".txt").exists():
+            prefix.with_suffix(".txt").replace(output_text)
 
 
 def use_skip_page(output_pdf: Path, output_text: Path) -> None:
-    output_text.write_text('[skipped page]', encoding='utf-8')
+    output_text.write_text("[skipped page]", encoding="utf-8")
 
     # A 0 byte file to the output to indicate a skip
-    output_pdf.write_bytes(b'')
+    output_pdf.write_bytes(b"")
 
 
 def generate_pdf(
@@ -383,37 +384,37 @@ def generate_pdf(
     args_tesseract = tess_base_args(languages, engine_mode)
 
     if pagesegmode is not None:
-        args_tesseract.extend(['--psm', str(pagesegmode)])
+        args_tesseract.extend(["--psm", str(pagesegmode)])
 
-    args_tesseract.extend(['-c', 'textonly_pdf=1'])
+    args_tesseract.extend(["-c", "textonly_pdf=1"])
 
     if thresholding != 0 and has_thresholding():
-        args_tesseract.extend(['-c', f'thresholding_method={thresholding}'])
+        args_tesseract.extend(["-c", f"thresholding_method={thresholding}"])
 
     if user_words:
-        args_tesseract.extend(['--user-words', user_words])
+        args_tesseract.extend(["--user-words", user_words])
 
     if user_patterns:
-        args_tesseract.extend(['--user-patterns', user_patterns])
+        args_tesseract.extend(["--user-patterns", user_patterns])
 
     prefix = output_pdf.parent / Path(output_pdf.stem)
 
     # Reminder: test suite tesseract test plugins might break after any changes
     # to the number of order parameters here
 
-    args_tesseract.extend([fspath(input_file), fspath(prefix), 'pdf', 'txt'])
+    args_tesseract.extend([fspath(input_file), fspath(prefix), "pdf", "txt"])
     args_tesseract.extend(tessconfig)
     try:
         p = run(args_tesseract, stdout=PIPE, stderr=STDOUT, timeout=timeout, check=True)
         stdout = p.stdout
-        if prefix.with_suffix('.txt').exists():
-            prefix.with_suffix('.txt').replace(output_text)
+        if prefix.with_suffix(".txt").exists():
+            prefix.with_suffix(".txt").replace(output_text)
     except TimeoutExpired:
         page_timedout(timeout)
         use_skip_page(output_pdf, output_text)
     except CalledProcessError as e:
         tesseract_log_output(e.output)
-        if b'Image too large' in e.output or b'Empty page!!' in e.output:
+        if b"Image too large" in e.output or b"Empty page!!" in e.output:
             use_skip_page(output_pdf, output_text)
             return
         raise SubprocessOutputError() from e
