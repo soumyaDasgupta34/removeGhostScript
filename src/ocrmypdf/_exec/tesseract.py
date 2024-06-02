@@ -159,7 +159,7 @@ def tess_base_args(langs: list[str], engine_mode: int | None) -> list[str]:
         args.extend(["-l", "+".join(langs)])
     if engine_mode is not None:
         args.extend(["--oem", str(engine_mode)])
-    args.extend(["--dpi", "2000"])
+    # args.extend(["--dpi", "2000"])
     return args
 
 
